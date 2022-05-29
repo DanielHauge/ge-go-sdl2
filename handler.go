@@ -7,12 +7,12 @@ import (
 
 type clickListener struct {
 	boundary    sdl.Rect
-	onClickChan chan<- int
+	onClickChan chan<- string
 }
 
-type keyListener struct {
-	key     sdl.Keysym
-	onPress chan<- int
+type focusListener struct {
+	boundary sdl.Rect
+	onInput  chan<- string
 }
 
 type position struct {
@@ -22,16 +22,41 @@ type position struct {
 
 var (
 	clickListeners map[string]clickListener
+	focusListeners map[string]focusListener
+	focusId        string
+	focusClick     chan string
+	textInput      chan<- string
 	lastPress      position
 	lastRelease    position
 	pressed        bool
+	inFocus        bool
 )
 
 func init() {
 	clickListeners = make(map[string]clickListener)
+	focusListeners = make(map[string]focusListener)
+
+	focusClick = make(chan string)
+}
+
+func handleFocusCursor() {
+	for running {
+		focusId = <-focusClick
+		value, ok := focusListeners[focusId]
+		inFocus = ok
+		if ok {
+			textInput = value.onInput
+			sdl.StartTextInput()
+			fmt.Println("Starting input")
+		} else {
+			sdl.StopTextInput()
+			fmt.Println("Stopping input")
+		}
+	}
 }
 
 func handleEvents() {
+	go handleFocusCursor()
 	for running {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
@@ -42,17 +67,28 @@ func handleEvents() {
 			case *sdl.MouseButtonEvent:
 				handleMouseEvent(t)
 				break
+			case *sdl.TextInputEvent:
+				if inFocus {
+					text := t.GetText()
+					textInput <- text
+				}
+				break
 			case *sdl.KeyboardEvent:
 				handleKeyboardEvent(t)
 				break
+			default:
+				// fmt.Printf("type is '%T'\n", t)
+				break
 			}
 		}
+		// sdl.Delay(20)
 	}
+
 }
 
 func handleMouseEvent(t *sdl.MouseButtonEvent) {
 	if t.State == sdl.PRESSED {
-		if t.Which == 1 && !pressed {
+		if t.Which == 0 && !pressed {
 			lastPress = position{x: t.X, y: t.Y}
 			pressed = true
 		}
@@ -112,14 +148,15 @@ func handleKeyboardEvent(t *sdl.KeyboardEvent) {
 	}
 
 	if keys != "" {
-		fmt.Println(keys)
+		// fmt.Println(keys)
 	}
 }
 
 func handleClick() {
-	for _, listener := range clickListeners {
+	focusClick <- ""
+	for id, listener := range clickListeners {
 		if isWithinBoundary(&listener.boundary, &lastRelease) && isWithinBoundary(&listener.boundary, &lastPress) {
-			listener.onClickChan <- 1
+			listener.onClickChan <- id
 		}
 	}
 }
@@ -132,8 +169,4 @@ func isWithinBoundary(rect *sdl.Rect, pos *position) bool {
 		return false
 	}
 	return true
-}
-
-func onKeyPress() {
-	// Let UI Elements in focus react to key presses.
 }

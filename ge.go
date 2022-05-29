@@ -3,27 +3,31 @@ package ge_go_sdl2
 import (
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/ttf"
 )
 
-var running = false
+var running bool
 
-func Initialize(gui Window, additionalViews []View) chan<- PropertyChange {
-	fmt.Println("Initializing GUI")
+func Run(gui View, additionalViews []View, pc chan<- PropertyChange) {
+	sdlInit()
+	defer destroyUI()
+	running = true
+	renderGUI(gui)
+	handleEvents()
+}
+
+func sdlInit() {
+	fmt.Println("Initializing SDL2")
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		panic(err)
 	}
-	go handleEvents()
-	RenderGUI(gui)
-	running = true
-
-	return nil
+	if err := ttf.Init(); err != nil {
+		panic(err)
+	}
 }
 
-func DestroyUI() {
+func destroyUI() {
 	running = false
-}
-
-func initializeGUI() {
-	defer sdl.Quit()
-
+	sdl.Quit()
+	ttf.Quit()
 }

@@ -1,18 +1,25 @@
 package ge_go_sdl2
 
 import (
+	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
 
-var window *sdl.Window
+var (
+	window *sdl.Window
+)
 
-func RenderGUI(wnd Window) {
+func init() {
+
+}
+
+func renderGUI(wnd View) {
 	var err error
 	if wnd.X == 0 && wnd.Y == 0 {
-		window, err = sdl.CreateWindow(wnd.Title, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, wnd.W, wnd.H, sdl.WINDOW_SHOWN)
+		window, err = sdl.CreateWindow(wnd.Id, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, wnd.W, wnd.H, sdl.WINDOW_SHOWN)
 	} else {
-		window, err = sdl.CreateWindow(wnd.Title, wnd.X, wnd.Y, wnd.W, wnd.H, sdl.WINDOW_SHOWN)
+		window, err = sdl.CreateWindow(wnd.Id, wnd.X, wnd.Y, wnd.W, wnd.H, sdl.WINDOW_SHOWN)
 	}
 	if err != nil {
 		panic(err)
@@ -22,6 +29,7 @@ func RenderGUI(wnd Window) {
 	if err != nil {
 		panic(err)
 	}
+	surface.FillRect(&sdl.Rect{X: 0, Y: 0, W: wnd.W, H: wnd.H}, wnd.BgColor)
 
 	for _, child := range wnd.Children {
 		switch t := child.(type) {
@@ -87,8 +95,10 @@ func renderButton(surface *sdl.Surface, btn Button, update bool) {
 	surface.FillRect(&borderRect, btn.BorderColor)
 	surface.FillRect(&innerRect, btn.BgColor)
 
-	btn.Content.X = btn.X + btn.W/2
-	btn.Content.Y = btn.Y + btn.H/2
+	btn.Content.X = btn.X + 2
+	btn.Content.Y = btn.Y + 1
+
+	clickListeners[btn.Id] = clickListener{boundary: borderRect, onClickChan: btn.OnClick}
 
 	renderText(surface, btn.Content, false)
 
@@ -98,9 +108,9 @@ func renderButton(surface *sdl.Surface, btn Button, update bool) {
 }
 
 func renderText(surface *sdl.Surface, text Text, update bool) {
-	textFont, err := ttf.OpenFont("../fonts/"+text.Font, text.Size)
+	textFont, err := ttf.OpenFont(text.Font, text.Size)
 	if err != nil {
-		panic("could not open font: " + text.Font)
+		panic(err.Error())
 	}
 	defer textFont.Close()
 
@@ -119,8 +129,31 @@ func renderText(surface *sdl.Surface, text Text, update bool) {
 }
 
 func renderTextField(surface *sdl.Surface, txtField TextField, update bool) {
-	rect := sdl.Rect{X: txtField.X, Y: txtField.Y, W: txtField.W, H: txtField.H}
-	sdl.SetTextInputRect(&rect)
+
+	renderThis := func() {
+		borderRect := sdl.Rect{X: txtField.X, Y: txtField.Y, W: txtField.W, H: txtField.H}
+		innerRect := sdl.Rect{X: txtField.X + 1, Y: txtField.Y + 1, W: txtField.W - 2, H: txtField.H - 2}
+		surface.FillRect(&borderRect, txtField.BorderColor)
+		surface.FillRect(&innerRect, txtField.BgColor)
+		clickListeners[txtField.Id] = clickListener{boundary: borderRect, onClickChan: focusClick}
+		txtLabel := Text{X: innerRect.X + 2, Y: innerRect.Y + 2, Size: txtField.Size, Font: txtField.Font, Label: txtField.Value, TextColor: txtField.TextColor}
+		renderText(surface, txtLabel, false)
+	}
+	renderThis()
+
+	onInput := make(chan string)
+	focusListeners[txtField.Id] = focusListener{onInput: onInput}
+
+	go func() {
+		for {
+			v := <-onInput
+			fmt.Println("found: ", v)
+			txtField.Value += v
+			renderThis()
+			window.UpdateSurface()
+		}
+
+	}()
 
 	if update {
 		window.UpdateSurface()
