@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	ge_go_sdl2 "ge-go-sdl2"
+	ge_go_sdl2 "github.com/DanielHauge/ge-go-sdl2"
 )
 
 func main() {

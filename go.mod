@@ -1,4 +1,4 @@
-module ge-go-sdl2
+module github.com/DanielHauge/ge-go-sdl2
 
 go 1.18
 
