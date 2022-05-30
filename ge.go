@@ -6,13 +6,18 @@ import (
 	"github.com/veandco/go-sdl2/ttf"
 )
 
-var running bool
+var (
+	running bool
+)
 
-func Run(gui View, additionalViews []View, pc chan<- PropertyChange) {
+func Run(gui []View) {
+	running = true
+
+	registerViews(gui)
 	sdlInit()
 	defer destroyUI()
-	running = true
-	renderGUI(gui)
+	renderGUI(gui[0])
+	go handlePropertyChanges()
 	handleEvents()
 }
 
@@ -28,6 +33,7 @@ func sdlInit() {
 
 func destroyUI() {
 	running = false
+	destroy()
 	sdl.Quit()
 	ttf.Quit()
 }

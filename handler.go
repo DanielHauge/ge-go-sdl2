@@ -1,7 +1,6 @@
 package ge_go_sdl2
 
 import (
-	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -13,6 +12,7 @@ type clickListener struct {
 type focusListener struct {
 	boundary sdl.Rect
 	onInput  chan<- string
+	onEdit   chan<- string
 }
 
 type position struct {
@@ -25,7 +25,7 @@ var (
 	focusListeners map[string]focusListener
 	focusId        string
 	focusClick     chan string
-	textInput      chan<- string
+	focusInput     focusListener
 	lastPress      position
 	lastRelease    position
 	pressed        bool
@@ -45,12 +45,10 @@ func handleFocusCursor() {
 		value, ok := focusListeners[focusId]
 		inFocus = ok
 		if ok {
-			textInput = value.onInput
+			focusInput = value
 			sdl.StartTextInput()
-			fmt.Println("Starting input")
 		} else {
 			sdl.StopTextInput()
-			fmt.Println("Stopping input")
 		}
 	}
 }
@@ -70,20 +68,17 @@ func handleEvents() {
 			case *sdl.TextInputEvent:
 				if inFocus {
 					text := t.GetText()
-					textInput <- text
+					focusInput.onInput <- text
 				}
 				break
 			case *sdl.KeyboardEvent:
 				handleKeyboardEvent(t)
 				break
 			default:
-				// fmt.Printf("type is '%T'\n", t)
 				break
 			}
 		}
-		// sdl.Delay(20)
 	}
-
 }
 
 func handleMouseEvent(t *sdl.MouseButtonEvent) {
@@ -101,54 +96,16 @@ func handleMouseEvent(t *sdl.MouseButtonEvent) {
 
 func handleKeyboardEvent(t *sdl.KeyboardEvent) {
 	keyCode := t.Keysym.Sym
-	keys := ""
-
-	// Modifier keys
-	switch t.Keysym.Mod {
-	case sdl.KMOD_LALT:
-		keys += "Left Alt"
-	case sdl.KMOD_LCTRL:
-		keys += "Left Control"
-	case sdl.KMOD_LSHIFT:
-		keys += "Left Shift"
-	case sdl.KMOD_LGUI:
-		keys += "Left Meta or Windows key"
-	case sdl.KMOD_RALT:
-		keys += "Right Alt"
-	case sdl.KMOD_RCTRL:
-		keys += "Right Control"
-	case sdl.KMOD_RSHIFT:
-		keys += "Right Shift"
-	case sdl.KMOD_RGUI:
-		keys += "Right Meta or Windows key"
-	case sdl.KMOD_NUM:
-		keys += "Num Lock"
-	case sdl.KMOD_CAPS:
-		keys += "Caps Lock"
-	case sdl.KMOD_MODE:
-		keys += "AltGr Key"
-	}
-
-	if keyCode < 10000 {
-		if keys != "" {
-			keys += " + "
-		}
-
-		// If the key is held down, this will fire
-		if t.Repeat > 0 {
-			keys += string(keyCode) + " repeating"
-		} else {
-			if t.State == sdl.RELEASED {
-				keys += string(keyCode) + " released"
-			} else if t.State == sdl.PRESSED {
-				keys += string(keyCode) + " pressed"
+	if inFocus { // keycode = 8 -> backspace
+		if keyCode == 8 {
+			if t.Repeat > 0 {
+				focusInput.onEdit <- "-"
+			} else {
+				if t.State == sdl.PRESSED {
+					focusInput.onEdit <- "-"
+				}
 			}
 		}
-
-	}
-
-	if keys != "" {
-		// fmt.Println(keys)
 	}
 }
 
