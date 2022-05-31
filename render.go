@@ -71,7 +71,7 @@ func renderContainer(surface *sdl.Surface, viewContainer Container) {
 	}
 	renderThis(&viewContainer)
 
-	updateChan := make(chan PropertyChange)
+	updateChan := make(chan propertyChange)
 	updateChannels[viewContainer.Id] = updateChan
 	go handleElementPropertyChanges(updateChan, &viewContainer, renderThis)
 
@@ -132,7 +132,7 @@ func renderButton(surface *sdl.Surface, btn Button) {
 	}
 	renderThis(&btn)
 
-	updateChan := make(chan PropertyChange)
+	updateChan := make(chan propertyChange)
 	updateChannels[btn.Id] = updateChan
 	go handleElementPropertyChanges(updateChan, &btn, renderThis)
 
@@ -168,7 +168,7 @@ func renderText(surface *sdl.Surface, txt Text) {
 
 	renderThis(&txt)
 
-	updateChan := make(chan PropertyChange)
+	updateChan := make(chan propertyChange)
 	updateChannels[txt.Id] = updateChan
 	go handleElementPropertyChanges(updateChan, &txt, renderThis)
 

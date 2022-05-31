@@ -27,10 +27,6 @@ type Container struct {
 	Y      int32
 }
 
-func (e *Container) ChangeView(viewId string) {
-	PropertyChangeChannel <- PropertyChange{Id: e.Id, Name: "ViewId", Value: viewId}
-}
-
 type Text struct {
 	Content   string
 	X         int32
@@ -54,10 +50,6 @@ type Button struct {
 	OnClick      chan string
 }
 
-func (e *Button) SetContent(content string) {
-	PropertyChangeChannel <- PropertyChange{Id: e.Id, Name: "Content", Value: content}
-}
-
 type TextField struct {
 	Value       string
 	OnChanged   chan string
@@ -71,10 +63,6 @@ type TextField struct {
 	Font        string
 	TextColor   sdl.Color
 	Id          string
-}
-
-func (e *TextField) SetText(text string) {
-	PropertyChangeChannel <- PropertyChange{Id: e.Id, Name: "Value", Value: text}
 }
 
 func (e *TextField) notifyChange() {

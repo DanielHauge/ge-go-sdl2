@@ -5,19 +5,19 @@ import (
 )
 
 var (
-	updateChannels        map[string]chan PropertyChange
-	PropertyChangeChannel chan PropertyChange
+	updateChannels        map[string]chan propertyChange
+	PropertyChangeChannel chan propertyChange
 )
 
-type PropertyChange struct {
+type propertyChange struct {
 	Id    string
 	Name  string
 	Value interface{}
 }
 
 func init() {
-	updateChannels = make(map[string]chan PropertyChange)
-	PropertyChangeChannel = make(chan PropertyChange)
+	updateChannels = make(map[string]chan propertyChange)
+	PropertyChangeChannel = make(chan propertyChange)
 }
 
 func handlePropertyChanges() {
@@ -30,7 +30,7 @@ func handlePropertyChanges() {
 	}
 }
 
-func handleElementPropertyChanges[T uiElement](pcChan <-chan PropertyChange, ph *T, redrawFunc func(t *T)) {
+func handleElementPropertyChanges[T uiElement](pcChan <-chan propertyChange, ph *T, redrawFunc func(t *T)) {
 	for {
 		select {
 		case pc := <-pcChan:
@@ -41,7 +41,7 @@ func handleElementPropertyChanges[T uiElement](pcChan <-chan PropertyChange, ph 
 	}
 }
 
-func changeElementProperty(pc PropertyChange, ph interface{}) {
+func changeElementProperty(pc propertyChange, ph interface{}) {
 	value := reflect.ValueOf(ph)
 	pcValue := reflect.ValueOf(pc.Value)
 	if value.Elem().Kind() == reflect.Struct {
@@ -51,4 +51,12 @@ func changeElementProperty(pc PropertyChange, ph interface{}) {
 		ref := reflect.Indirect(value)
 		ref.Set(structValue)
 	}
+}
+
+func NotifyPropertyChange(id string, propertyName string, newValue interface{}) {
+	PropertyChangeChannel <- propertyChange{Id: id, Name: propertyName, Value: newValue}
+}
+
+func NotifyPropertyChangeAsync(id string, propertyName string, newValue interface{}) {
+	go NotifyPropertyChange(id, propertyName, newValue)
 }
