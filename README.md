@@ -1,2 +1,2 @@
 # ge-go-sdl2
-This repository is an auxiliry component for a proposed solution for a bachelors project at DTU.
+This repository contains code for running an application runtime with gui support running with sdl2.
