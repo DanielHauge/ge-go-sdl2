@@ -165,11 +165,11 @@ func renderText(surface *sdl.Surface, txt Text) {
 		clear = true
 		switch text.Alignment {
 		case Left:
-			err = label.Blit(nil, surface, &sdl.Rect{X: text.X, Y: text.Y, W: 0, H: 0})
+			err = label.Blit(nil, surface, &sdl.Rect{X: text.X, Y: text.Y + (text.H / 2), W: 0, H: 0})
 		case Center:
-			err = label.Blit(nil, surface, &sdl.Rect{X: text.X + (text.W / 2) - (label.ClipRect.W / 2), Y: text.Y, W: 0, H: 0})
+			err = label.Blit(nil, surface, &sdl.Rect{X: text.X + (text.W / 2) - (label.ClipRect.W / 2), Y: text.Y + (text.H / 2), W: 0, H: 0})
 		case Right:
-			err = label.Blit(nil, surface, &sdl.Rect{X: text.X + text.W - label.ClipRect.W, Y: text.Y, W: 0, H: 0})
+			err = label.Blit(nil, surface, &sdl.Rect{X: text.X + text.W - label.ClipRect.W, Y: text.Y + (text.H / 2), W: 0, H: 0})
 		}
 
 	}
