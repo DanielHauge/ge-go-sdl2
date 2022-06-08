@@ -10,9 +10,10 @@ var (
 )
 
 type propertyChange struct {
-	Id    string
-	Name  string
-	Value interface{}
+	Id     string
+	Name   string
+	Value  interface{}
+	DoneCB chan int
 }
 
 func init() {
@@ -37,6 +38,9 @@ func handleElementPropertyChanges[T uiElement](pcChan <-chan propertyChange, ph 
 			changeElementProperty(pc, ph)
 			redrawFunc(ph)
 			window.UpdateSurface()
+			if pc.DoneCB != nil {
+				go func() { pc.DoneCB <- 1 }()
+			}
 		}
 	}
 }
