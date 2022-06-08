@@ -10,7 +10,7 @@ var (
 	running bool
 )
 
-func Run(gui []View) {
+func Run(gui []*View) {
 	running = true
 
 	registerViews(gui)
