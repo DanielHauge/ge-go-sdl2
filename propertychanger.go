@@ -6,7 +6,7 @@ import (
 
 var (
 	updateChannels        map[string]chan propertyChange
-	PropertyChangeChannel chan propertyChange
+	propertyChangeChannel chan propertyChange
 )
 
 type propertyChange struct {
@@ -18,12 +18,12 @@ type propertyChange struct {
 
 func init() {
 	updateChannels = make(map[string]chan propertyChange)
-	PropertyChangeChannel = make(chan propertyChange)
+	propertyChangeChannel = make(chan propertyChange)
 }
 
 func handlePropertyChanges() {
 	for {
-		pc := <-PropertyChangeChannel
+		pc := <-propertyChangeChannel
 		channel, ok := updateChannels[pc.Id]
 		if ok {
 			channel <- pc
@@ -58,7 +58,15 @@ func changeElementProperty(pc propertyChange, ph interface{}) {
 }
 
 func NotifyPropertyChange(id string, propertyName string, newValue interface{}) {
-	PropertyChangeChannel <- propertyChange{Id: id, Name: propertyName, Value: newValue}
+	propertyChangeChannel <- propertyChange{Id: id, Name: propertyName, Value: newValue}
+}
+
+func NotifyPropertyChangeCb(id string, propertyName string, newValue interface{}, cb chan int) {
+	propertyChangeChannel <- propertyChange{Id: id, Name: propertyName, Value: newValue, DoneCB: cb}
+}
+
+func NotifyPropertyChangeCbAsync(id string, propertyName string, newValue interface{}, cb chan int) {
+	go NotifyPropertyChangeCb(id, propertyName, newValue, cb)
 }
 
 func NotifyPropertyChangeAsync(id string, propertyName string, newValue interface{}) {
