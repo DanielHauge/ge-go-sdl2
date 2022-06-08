@@ -27,14 +27,25 @@ type Container struct {
 	Y      int32
 }
 
+type HAlign int64
+
+const (
+	Left HAlign = iota
+	Center
+	Right
+)
+
 type Text struct {
 	Content   string
 	X         int32
 	Y         int32
+	W         int32
+	H         int32
 	Size      int
 	Font      string
 	TextColor sdl.Color
 	Id        string
+	Alignment HAlign
 }
 
 type Button struct {
