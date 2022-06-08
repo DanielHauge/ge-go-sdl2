@@ -8,17 +8,17 @@ import (
 
 var (
 	window *sdl.Window
-	views  map[string]*View
+	views  map[string]View
 )
 
-func registerViews(gui []*View) {
-	views = make(map[string]*View)
+func registerViews(gui []View) {
+	views = make(map[string]View)
 	for _, v := range gui {
 		views[v.Id] = v
 	}
 }
 
-func renderGUI(wnd *View) {
+func renderGUI(wnd View) {
 	var err error
 	if wnd.X == 0 && wnd.Y == 0 {
 		window, err = sdl.CreateWindow(wnd.Id, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, wnd.W, wnd.H, sdl.WINDOW_SHOWN)
@@ -37,19 +37,19 @@ func renderGUI(wnd *View) {
 
 	for _, child := range wnd.Children {
 		switch t := child.(type) {
-		case *View:
+		case View:
 			renderView(surface, t)
 			break
-		case *Container:
+		case Container:
 			renderContainer(surface, t)
 			break
-		case *TextField:
+		case TextField:
 			renderTextField(surface, t)
 			break
-		case *Button:
+		case Button:
 			renderButton(surface, t)
 			break
-		case *Text:
+		case Text:
 			renderText(surface, t)
 			break
 		}
@@ -62,7 +62,7 @@ func destroy() {
 	window.Destroy()
 }
 
-func renderContainer(surface *sdl.Surface, viewContainer *Container) {
+func renderContainer(surface *sdl.Surface, viewContainer Container) {
 
 	renderThis := func(container *Container) {
 		view := views[container.ViewId]
@@ -70,15 +70,15 @@ func renderContainer(surface *sdl.Surface, viewContainer *Container) {
 		view.Y += container.Y
 		renderView(surface, view)
 	}
-	renderThis(viewContainer)
+	renderThis(&viewContainer)
 
 	updateChan := make(chan propertyChange)
 	updateChannels[viewContainer.Id] = updateChan
-	go handleElementPropertyChanges(updateChan, viewContainer, renderThis)
+	go handleElementPropertyChanges(updateChan, &viewContainer, renderThis)
 
 }
 
-func renderView(surface *sdl.Surface, view *View) {
+func renderView(surface *sdl.Surface, view View) {
 	rect := sdl.Rect{X: view.X, Y: view.Y, W: view.W, H: view.H}
 	borderRect := sdl.Rect{X: view.X - 1, Y: view.Y - 1, W: view.W + 2, H: view.H + 2}
 	surface.FillRect(&borderRect, view.BorderColor)
@@ -88,24 +88,24 @@ func renderView(surface *sdl.Surface, view *View) {
 		case View:
 			t.X += view.X
 			t.Y += view.Y
-			renderView(surface, &t)
+			renderView(surface, t)
 			break
-		case *Container:
+		case Container:
 			t.X += view.X
 			t.Y += view.Y
 			renderContainer(surface, t)
 			break
-		case *TextField:
+		case TextField:
 			t.X += view.X
 			t.Y += view.Y
 			renderTextField(surface, t)
 			break
-		case *Button:
+		case Button:
 			t.X += view.X
 			t.Y += view.Y
 			renderButton(surface, t)
 			break
-		case *Text:
+		case Text:
 			t.X += view.X
 			t.Y += view.Y
 			renderText(surface, t)
@@ -115,7 +115,7 @@ func renderView(surface *sdl.Surface, view *View) {
 
 }
 
-func renderButton(surface *sdl.Surface, btn *Button) {
+func renderButton(surface *sdl.Surface, btn Button) {
 
 	renderThis := func(btn *Button) {
 		borderRect := sdl.Rect{X: btn.X, Y: btn.Y, W: btn.W, H: btn.H}
@@ -129,17 +129,17 @@ func renderButton(surface *sdl.Surface, btn *Button) {
 
 		clickListeners[btn.Id] = clickListener{boundary: borderRect, onClickChan: btn.OnClick}
 
-		renderText(surface, &btn.ContentLabel)
+		renderText(surface, btn.ContentLabel)
 	}
-	renderThis(btn)
+	renderThis(&btn)
 
 	updateChan := make(chan propertyChange)
 	updateChannels[btn.Id] = updateChan
-	go handleElementPropertyChanges(updateChan, btn, renderThis)
+	go handleElementPropertyChanges(updateChan, &btn, renderThis)
 
 }
 
-func renderText(surface *sdl.Surface, txt *Text) {
+func renderText(surface *sdl.Surface, txt Text) {
 	red, green, blue, alpha := surface.At(int(txt.X), int(txt.Y)).RGBA()
 	bgColor := sdl.MapRGBA(surface.Format, uint8(red), uint8(green), uint8(blue), uint8(alpha))
 
@@ -172,15 +172,15 @@ func renderText(surface *sdl.Surface, txt *Text) {
 
 	}
 
-	renderThis(txt)
+	renderThis(&txt)
 
 	updateChan := make(chan propertyChange)
 	updateChannels[txt.Id] = updateChan
-	go handleElementPropertyChanges(updateChan, txt, renderThis)
+	go handleElementPropertyChanges(updateChan, &txt, renderThis)
 
 }
 
-func renderTextField(surface *sdl.Surface, txtField *TextField) {
+func renderTextField(surface *sdl.Surface, txtField TextField) {
 
 	renderThis := func() {
 		borderRect := sdl.Rect{X: txtField.X, Y: txtField.Y, W: txtField.W, H: txtField.H}
@@ -189,7 +189,7 @@ func renderTextField(surface *sdl.Surface, txtField *TextField) {
 		surface.FillRect(&innerRect, txtField.BgColor)
 		clickListeners[txtField.Id] = clickListener{boundary: borderRect, onClickChan: focusClick}
 		txtLabel := Text{X: innerRect.X + 2, Y: innerRect.Y + 2, Size: txtField.Size, Font: txtField.Font, Content: txtField.Value, TextColor: txtField.TextColor}
-		renderText(surface, &txtLabel)
+		renderText(surface, txtLabel)
 	}
 	renderThis()
 
