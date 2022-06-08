@@ -1,6 +1,7 @@
 package ge_go_sdl2
 
 import (
+	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -141,8 +142,6 @@ func renderButton(surface *sdl.Surface, btn Button) {
 func renderText(surface *sdl.Surface, txt Text) {
 	red, green, blue, alpha := surface.At(int(txt.X), int(txt.Y)).RGBA()
 	bgColor := sdl.MapRGBA(surface.Format, uint8(red), uint8(green), uint8(blue), uint8(alpha))
-	var clearRect sdl.Rect
-	clear := false
 
 	renderThis := func(text *Text) {
 		textFont, err := ttf.OpenFont(text.Font, text.Size)
@@ -156,13 +155,9 @@ func renderText(surface *sdl.Surface, txt Text) {
 			return
 		}
 		defer label.Free()
+		clearRect := sdl.Rect{X: text.X, Y: text.Y, W: text.W, H: text.H}
+		surface.FillRect(&clearRect, bgColor)
 
-		if clear {
-			surface.FillRect(&clearRect, bgColor)
-		}
-
-		clearRect = sdl.Rect{X: text.X, Y: text.Y, W: text.W, H: text.H}
-		clear = true
 		switch text.Alignment {
 		case Left:
 			err = label.Blit(nil, surface, &sdl.Rect{X: text.X, Y: text.Y + (text.H / 2), W: 0, H: 0})
@@ -170,6 +165,9 @@ func renderText(surface *sdl.Surface, txt Text) {
 			err = label.Blit(nil, surface, &sdl.Rect{X: text.X + (text.W / 2) - (label.ClipRect.W / 2), Y: text.Y + (text.H / 2), W: 0, H: 0})
 		case Right:
 			err = label.Blit(nil, surface, &sdl.Rect{X: text.X + text.W - label.ClipRect.W, Y: text.Y + (text.H / 2), W: 0, H: 0})
+		}
+		if err != nil {
+			fmt.Errorf(err.Error())
 		}
 
 	}
