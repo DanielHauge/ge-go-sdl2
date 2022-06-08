@@ -143,6 +143,8 @@ func renderText(surface *sdl.Surface, txt Text) {
 	red, green, blue, alpha := surface.At(int(txt.X), int(txt.Y)).RGBA()
 	bgColor := sdl.MapRGBA(surface.Format, uint8(red), uint8(green), uint8(blue), uint8(alpha))
 
+	clearRect := &sdl.Rect{X: txt.X, Y: txt.Y + (txt.H / 2), W: 0, H: 0} // Initialize with width and heigh 0 as to not clear anything first time around..
+
 	renderThis := func(text *Text) {
 		textFont, err := ttf.OpenFont(text.Font, text.Size)
 		if err != nil {
@@ -155,15 +157,28 @@ func renderText(surface *sdl.Surface, txt Text) {
 			return
 		}
 		defer label.Free()
-		clearRect := sdl.Rect{X: text.X, Y: text.Y, W: text.W, H: text.H}
-		surface.FillRect(&clearRect, bgColor)
 
 		switch text.Alignment {
 		case Left:
+			surface.FillRect(clearRect, bgColor)
+			clearRect.X = text.X
+			clearRect.Y = text.Y + (text.H / 2)
+			clearRect.W = label.ClipRect.W
+			clearRect.H = label.ClipRect.H
 			err = label.Blit(nil, surface, &sdl.Rect{X: text.X, Y: text.Y + (text.H / 2), W: 0, H: 0})
 		case Center:
+			surface.FillRect(clearRect, bgColor)
+			clearRect.X = text.X + (text.W / 2) - (label.ClipRect.W / 2)
+			clearRect.Y = text.Y + (text.H / 2)
+			clearRect.W = label.ClipRect.W
+			clearRect.H = label.ClipRect.H
 			err = label.Blit(nil, surface, &sdl.Rect{X: text.X + (text.W / 2) - (label.ClipRect.W / 2), Y: text.Y + (text.H / 2), W: 0, H: 0})
 		case Right:
+			surface.FillRect(clearRect, bgColor)
+			clearRect.X = text.X + text.W - label.ClipRect.W
+			clearRect.Y = text.Y + (text.H / 2)
+			clearRect.W = label.ClipRect.W
+			clearRect.H = label.ClipRect.H
 			err = label.Blit(nil, surface, &sdl.Rect{X: text.X + text.W - label.ClipRect.W, Y: text.Y + (text.H / 2), W: 0, H: 0})
 		}
 		if err != nil {
